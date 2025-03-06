@@ -13,42 +13,42 @@ myHeaders = {
 TOKEN = '7746010028:AAFIIkCfTsUD13vnWLwVEb9dbpwbOa5uxOM'
 
 user_states = {}
-def find_movies_by_person(person_name):
-    conn = sqlite3.connect('my_database.db')
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-        SELECT nconst, knownForTitles FROM people WHERE primaryName = ?
-        """, (person_name,))
-        person = cursor.fetchone()
-        if not person:
-            return None
-        person_id, known_for_titles = person
-        movie_ids = known_for_titles.split(',')
-        movies = []
-        for movie_id in movie_ids:
-            cursor.execute("""
-            SELECT titleId, title FROM movies WHERE titleId = ?
-            """, (movie_id,))
-            movie = cursor.fetchone()
-            if movie:
-                movies.append(movie)
-        results = []
-        for movie in movies:
-            title_id, title = movie
-            cursor.execute("""
-            SELECT averageRating FROM ratings WHERE tconst = ?
-            """, (title_id,))
-            rating = cursor.fetchone()
-            if rating:
-                results.append((title, rating[0]))
-            else:
-                results.append((title, "Рейтинг не найден"))
-        return results
-    finally:
-        conn.close()
-
-
+# def find_movies_by_person(person_name):
+#     conn = sqlite3.connect('my_database.db')
+#     cursor = conn.cursor()
+#     try:
+#         cursor.execute("""
+#         SELECT nconst, knownForTitles FROM people WHERE primaryName = ?
+#         """, (person_name,))
+#         person = cursor.fetchone()
+#         if not person:
+#             return None
+#         person_id, known_for_titles = person
+#         movie_ids = known_for_titles.split(',')
+#         movies = []
+#         for movie_id in movie_ids:
+#             cursor.execute("""
+#             SELECT titleId, title FROM movies WHERE titleId = ?
+#             """, (movie_id,))
+#             movie = cursor.fetchone()
+#             if movie:
+#                 movies.append(movie)
+#         results = []
+#         for movie in movies:
+#             title_id, title = movie
+#             cursor.execute("""
+#             SELECT averageRating FROM ratings WHERE tconst = ?
+#             """, (title_id,))
+#             rating = cursor.fetchone()
+#             if rating:
+#                 results.append((title, rating[0]))
+#             else:
+#                 results.append((title, "Рейтинг не найден"))
+#         return results
+#     finally:
+#         conn.close()
+#
+#
 
 def find_movies_by_person_other(person_name):
     conn = sqlite3.connect('my_database.db')
@@ -59,32 +59,32 @@ def find_movies_by_person_other(person_name):
         """, (person_name,))
         person_id = cursor.fetchone()
         if not person_id:
-            return None
-        movies = []
+            return []
+        person_id = person_id[0]
+
         cursor.execute("""
-                SELECT tconst FROM principals1 WHERE nconst = ?
-                """, (person_id,))
-        movie_id = cursor.fetchone()
-        if movie_id:
-            movies.append(movie_id)
+                SELECT movies.title, ratings.averageRating, principals1.category
+                FROM principals1
+                LEFT JOIN movies ON principals1.tconst = movies.titleId
+                LEFT JOIN ratings ON principals1.tconst = ratings.tconst
+                WHERE principals1.nconst = ?
+               """, (person_id,))
+        results = cursor.fetchall()
 
-        results = []
+        results1 = []
+        for title, rating, category in results:
+            if title is None:
+                title = "Нет названия"
+            if rating is None:
+                rating = "Нет рейтинга"
 
-        for movie_id in movies:
-            cursor.execute("""
-            SELECT averageRating FROM ratings WHERE tconst = ?
-            """, (movie_id,))
-            rating = cursor.fetchone()
-            cursor.execute("""
-            SELECT title FROM movies WHERE titleId = ?
-            """, (movie_id,))
-            title = cursor.fetchone()
-            if rating:
-                results.append((title, rating[0]))
-            else:
-                results.append((title, "Рейтинг не найден"))
+            results1.append((title, rating, category))
 
-        return results
+        return results1[:15]
+
+    except sqlite3.Error:
+        return []
+
     finally:
         conn.close()
 
@@ -140,34 +140,40 @@ def get_message(message):
 
 
         elif message.text == 'Главные актёры':
-            bot.send_message(chat_id, 'Как зовут актера/актеров (имя, фамилия)?')
+            bot.send_message(chat_id, 'Как зовут актера (имя, фамилия)?')
             user_states[message.chat.id] = 'waiting_for_actors_name'
 
 
         elif user_states.get(message.chat.id) == 'waiting_for_director_name':
             director_name = message.text
-            movies = find_movies_by_person(director_name)
+            movies = find_movies_by_person_other(director_name)
             if not movies:
                 bot.send_message(message.chat.id, 'Ничего не найдено. Проверьте имя и попробуйте еще раз.')
             else:
-                response = "Вот что я нашел:\n\n"
+                response = "Вот, что я нашел:\n\n"
                 for movie in movies:
-                    title, rating = movie
-                    response += f" {title} \n Рейтинг: {rating}\n\n"
+                    title, rating, category = movie
+                    if category == 'director':
+                        response += f" Режиссёр: \n {title} \n Рейтинг: {rating}\n\n"
+                    if category == 'producer':
+                        response += f" Продюссер: \n {title} \n Рейтинг: {rating}\n\n"
+
                 bot.send_message(message.chat.id, response)
             user_states[message.chat.id] = None
 
         elif user_states.get(message.chat.id) == 'waiting_for_actors_name':
-            actors_name = message.text
-            movies = find_movies_by_person(actors_name)
+            actors_name = message.text.strip()
+            movies = find_movies_by_person_other(actors_name)
             if not movies:
                 bot.send_message(message.chat.id, 'Ничего не найдено. Проверьте имя и попробуйте еще раз.')
             else:
-                response = "Вот что я нашел:\n\n"
+                response1 = "Вот, что я нашел:\n\n"
                 for movie in movies:
-                    title, rating = movie
-                    response += f" {title} \n Рейтинг: {rating}\n\n"
-                bot.send_message(message.chat.id, response)
+                    title, rating, category = movie
+                    if category == 'actor' or category == 'actress':
+                        response1 += f" {title} \n Рейтинг: {rating}\n\n"
+
+                bot.send_message(message.chat.id, response1)
             user_states[message.chat.id] = None
 
 
