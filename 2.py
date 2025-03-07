@@ -88,6 +88,27 @@ def find_movies_by_person_other(person_name):
     finally:
         conn.close()
 
+def find_books_by_authors_name(person_name):
+    conn = sqlite3.connect('my_database_books.db')
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT title, isbn13 FROM people WHERE authors = ?
+            """, (person_name,))
+        books = cursor.fetchall()
+        result = []
+        for title, isbn13 in books:
+            result.append((title, isbn13))
+
+        return result[:10]
+    except sqlite3.Error:
+        return []
+
+    finally:
+        conn.close()
+
+
+
 @bot.message_handler(commands=['start'])
 def get_start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -144,6 +165,11 @@ def get_message(message):
             user_states[message.chat.id] = 'waiting_for_actors_name'
 
 
+        elif message.text == 'Автор':
+            bot.send_message(chat_id, 'Как зовут автора книги (имя, фамилия)?')
+            user_states[message.chat.id] = 'waiting_for_authors_name'
+
+
         elif user_states.get(message.chat.id) == 'waiting_for_director_name':
             director_name = message.text
             movies = find_movies_by_person_other(director_name)
@@ -174,6 +200,18 @@ def get_message(message):
                         response1 += f" {title} \n Рейтинг: {rating}\n\n"
 
                 bot.send_message(message.chat.id, response1)
+            user_states[message.chat.id] = None
+
+
+        elif user_states.get(message.chat.id) == 'waiting_for_authors_name':
+            authors_name = message.text.strip()
+            books = find_books_by_authors_name(authors_name)
+            response = "Вот, что я нашел:\n\n"
+            for book in books:
+                title, isbn13 = book
+                response += f" {title} \n Номер ISBN: {isbn13}\n\n"
+
+            bot.send_message(message.chat.id, response)
             user_states[message.chat.id] = None
 
 
