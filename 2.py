@@ -93,20 +93,54 @@ def find_books_by_authors_name(person_name):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT title, isbn13 FROM people WHERE authors = ?
+            SELECT title, description, published_year, average_rating FROM people WHERE authors = ?
             """, (person_name,))
         books = cursor.fetchall()
         result = []
-        for title, isbn13 in books:
-            result.append((title, isbn13))
+        for title, description, published_year, average_rating in books:
+            result.append((title, description, published_year, average_rating))
 
-        return result[:10]
+        sorted_results = sorted(result, key=lambda x: x[3], reverse=True)
+
+        return sorted_results[:3]
     except sqlite3.Error:
         return []
 
     finally:
         conn.close()
 
+
+def find_books_by_genre(genre):
+    conn = sqlite3.connect('my_database_books.db')
+    cursor = conn.cursor()
+    str = f"%{genre}%"
+    try:
+        query = "SELECT title, authors, description, published_year, average_rating  FROM people WHERE categories LIKE ?"
+        cursor.execute(query, (str,))
+        books = cursor.fetchall()
+        result = []
+        for title, authors, description, published_year, average_rating in books:
+            result.append((title, authors, description, published_year, average_rating))
+
+        sorted_results = sorted(result, key=lambda x: x[4], reverse=True)
+
+        return sorted_results[:3]
+    except sqlite3.Error:
+        return []
+
+    finally:
+        conn.close()
+
+def get_books_by_genre(message):
+    genre = message.text
+    books = find_books_by_genre(genre)
+    if not books:
+        bot.send_message(message.chat.id, 'Ничего не найдено. Проверьте название жанра и попробуйте еще раз.')
+    else:
+        response = "Вот, что я нашел:\n\n"
+        for book in books:
+            title, authors, description, published_year, average_rating = book
+            response += f" {title} \n Автор: {authors} \n Год выпуска книги: {published_year} \n Описание книги: {description}\n Рейтинг: {average_rating}\n\n"
 
 
 @bot.message_handler(commands=['start'])
@@ -126,7 +160,7 @@ def get_message(message):
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
             plot = types.KeyboardButton('Сюжет')
             author = types.KeyboardButton('Автор')
-            main_characters = types.KeyboardButton('Главные герои')
+            main_characters = types.KeyboardButton('Жанр')
             scene_of_action = types.KeyboardButton('Место действия')
             time_of_action = types.KeyboardButton('Время действия')
             back = types.KeyboardButton('Назад')
@@ -169,6 +203,50 @@ def get_message(message):
             bot.send_message(chat_id, 'Как зовут автора книги (имя, фамилия)?')
             user_states[message.chat.id] = 'waiting_for_authors_name'
 
+        elif message.text == 'Жанр':
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            novel = types.KeyboardButton('Роман')
+            fiction = types.KeyboardButton('Беллетристика')
+            fantasy = types.KeyboardButton('Фантастика/фентези')
+            horror = types.KeyboardButton('Ужасы')
+            biography = types.KeyboardButton('Биография')
+            poetry = types.KeyboardButton('Поэзия')
+            political = types.KeyboardButton('Политическая литература')
+
+
+            markup.add(novel, fiction, fantasy, horror, biography, poetry, political)
+            bot.send_message(message.chat.id, 'Какой жанр у искомой книги?'.format(message.from_user), reply_markup=markup)
+
+
+        elif message.text == 'Беллетристика':
+            genre = 'Fiction'
+            response = get_books_by_genre(genre)
+
+            # books = find_books_by_genre(genre)
+            # if not books:
+            #     bot.send_message(message.chat.id, 'Ничего не найдено. Проверьте название жанра и попробуйте еще раз.')
+            # else:
+            #     response = "Вот, что я нашел:\n\n"
+            #     for book in books:
+            #         title, authors, description, published_year, average_rating = book
+            #         response += f" {title} \n Автор: {authors} \n Год выпуска книги: {published_year} \n Описание книги: {description}\n Рейтинг: {average_rating}\n\n"
+            #
+            #     bot.send_message(message.chat.id, response)
+
+
+
+        elif user_states.get(message.chat.id) == 'waiting_for_authors_name':
+            authors_name = message.text.strip()
+            books = find_books_by_authors_name(authors_name)
+            response = "Вот, что я нашел:\n\n"
+            for book in books:
+                title, description, published_year, average_rating = book
+                response += f" {title} \n Автор: {authors_name} \n Год выпуска книги: {published_year} \n Описание книги: {description}\n Рейтинг: {average_rating}\n\n"
+
+            bot.send_message(message.chat.id, response)
+            user_states[message.chat.id] = None
+
+
 
         elif user_states.get(message.chat.id) == 'waiting_for_director_name':
             director_name = message.text
@@ -200,18 +278,6 @@ def get_message(message):
                         response1 += f" {title} \n Рейтинг: {rating}\n\n"
 
                 bot.send_message(message.chat.id, response1)
-            user_states[message.chat.id] = None
-
-
-        elif user_states.get(message.chat.id) == 'waiting_for_authors_name':
-            authors_name = message.text.strip()
-            books = find_books_by_authors_name(authors_name)
-            response = "Вот, что я нашел:\n\n"
-            for book in books:
-                title, isbn13 = book
-                response += f" {title} \n Номер ISBN: {isbn13}\n\n"
-
-            bot.send_message(message.chat.id, response)
             user_states[message.chat.id] = None
 
 
