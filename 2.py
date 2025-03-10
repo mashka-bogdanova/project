@@ -2,6 +2,8 @@ import telebot
 import requests
 from telebot import types
 import sqlite3
+from googletrans import Translator
+from transliterate import translit
 
 bot = telebot.TeleBot('7746010028:AAFIIkCfTsUD13vnWLwVEb9dbpwbOa5uxOM')
 myHeaders = {
@@ -13,42 +15,12 @@ myHeaders = {
 TOKEN = '7746010028:AAFIIkCfTsUD13vnWLwVEb9dbpwbOa5uxOM'
 
 user_states = {}
-# def find_movies_by_person(person_name):
-#     conn = sqlite3.connect('my_database.db')
-#     cursor = conn.cursor()
-#     try:
-#         cursor.execute("""
-#         SELECT nconst, knownForTitles FROM people WHERE primaryName = ?
-#         """, (person_name,))
-#         person = cursor.fetchone()
-#         if not person:
-#             return None
-#         person_id, known_for_titles = person
-#         movie_ids = known_for_titles.split(',')
-#         movies = []
-#         for movie_id in movie_ids:
-#             cursor.execute("""
-#             SELECT titleId, title FROM movies WHERE titleId = ?
-#             """, (movie_id,))
-#             movie = cursor.fetchone()
-#             if movie:
-#                 movies.append(movie)
-#         results = []
-#         for movie in movies:
-#             title_id, title = movie
-#             cursor.execute("""
-#             SELECT averageRating FROM ratings WHERE tconst = ?
-#             """, (title_id,))
-#             rating = cursor.fetchone()
-#             if rating:
-#                 results.append((title, rating[0]))
-#             else:
-#                 results.append((title, "Рейтинг не найден"))
-#         return results
-#     finally:
-#         conn.close()
-#
-#
+
+def translation(title):
+    translator = Translator()
+    str = "'" + title + "'"
+    title_ru = translator.translate(str, dest='ru').text
+    return title_ru
 
 def find_movies_by_person_other(person_name):
     conn = sqlite3.connect('my_database.db')
@@ -76,11 +48,11 @@ def find_movies_by_person_other(person_name):
             if title is None:
                 title = "Нет названия"
             if rating is None:
-                rating = "Нет рейтинга"
+                rating = 0.0
 
             results1.append((title, rating, category))
 
-        sorted_results = sorted(results1, key=lambda x: x[1], reverse=True)
+#        sorted_results = sorted(results1, key=lambda x: x[2], reverse=True)
 
         return results1[:15]
 
@@ -89,6 +61,8 @@ def find_movies_by_person_other(person_name):
 
     finally:
         conn.close()
+
+
 
 def find_books_by_authors_name(person_name):
     conn = sqlite3.connect('my_database_books.db')
@@ -100,11 +74,12 @@ def find_books_by_authors_name(person_name):
         books = cursor.fetchall()
         result = []
         for title, published_year, average_rating in books:
-            result.append((title, published_year, average_rating))
+            title1 = translation(title)
+            result.append((title1, published_year, average_rating))
 
         sorted_results = sorted(result, key=lambda x: x[2], reverse=True)
 
-        return sorted_results[:5]
+        return sorted_results[:10]
     except sqlite3.Error:
         return []
 
@@ -122,7 +97,8 @@ def find_books_by_genre(genre):
         books = cursor.fetchall()
         result = []
         for title, authors, published_year, average_rating in books:
-            result.append((title, authors, published_year, average_rating))
+            title1 = translation(title)
+            result.append((title1, authors, published_year, average_rating))
 
         sorted_results = sorted(result, key=lambda x: x[3], reverse=True)
 
@@ -256,8 +232,8 @@ def get_message(message):
             books = find_books_by_authors_name(authors_name)
             response = "Вот, что я нашел:\n\n"
             for book in books:
-                title, description, published_year, average_rating = book
-                response += f" {title} \n Автор: {authors_name} \n Год выпуска книги: {published_year} \n Описание книги: {description}\n Рейтинг: {average_rating}\n\n"
+                title, published_year, average_rating = book
+                response += f" {title} \n Автор: {authors_name} \n Год выпуска книги: {published_year} \n Рейтинг: {average_rating}\n\n"
 
             bot.send_message(message.chat.id, response)
             user_states[message.chat.id] = None
@@ -273,6 +249,7 @@ def get_message(message):
                 response = "Вот, что я нашел:\n\n"
                 for movie in movies:
                     title, rating, category = movie
+
                     if category == 'director':
                         response += f" Режиссёр: \n {title} \n Рейтинг: {rating}\n\n"
                     if category == 'producer':
