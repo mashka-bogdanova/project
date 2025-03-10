@@ -80,6 +80,8 @@ def find_movies_by_person_other(person_name):
 
             results1.append((title, rating, category))
 
+        sorted_results = sorted(results1, key=lambda x: x[1], reverse=True)
+
         return results1[:15]
 
     except sqlite3.Error:
@@ -93,16 +95,16 @@ def find_books_by_authors_name(person_name):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT title, description, published_year, average_rating FROM people WHERE authors = ?
+            SELECT title, published_year, average_rating FROM people WHERE authors = ?
             """, (person_name,))
         books = cursor.fetchall()
         result = []
-        for title, description, published_year, average_rating in books:
-            result.append((title, description, published_year, average_rating))
+        for title, published_year, average_rating in books:
+            result.append((title, published_year, average_rating))
 
-        sorted_results = sorted(result, key=lambda x: x[3], reverse=True)
+        sorted_results = sorted(result, key=lambda x: x[2], reverse=True)
 
-        return sorted_results[:3]
+        return sorted_results[:5]
     except sqlite3.Error:
         return []
 
@@ -115,32 +117,33 @@ def find_books_by_genre(genre):
     cursor = conn.cursor()
     str = f"%{genre}%"
     try:
-        query = "SELECT title, authors, description, published_year, average_rating  FROM people WHERE categories LIKE ?"
+        query = "SELECT title, authors, published_year, average_rating  FROM people WHERE categories LIKE ?"
         cursor.execute(query, (str,))
         books = cursor.fetchall()
         result = []
-        for title, authors, description, published_year, average_rating in books:
-            result.append((title, authors, description, published_year, average_rating))
+        for title, authors, published_year, average_rating in books:
+            result.append((title, authors, published_year, average_rating))
 
-        sorted_results = sorted(result, key=lambda x: x[4], reverse=True)
+        sorted_results = sorted(result, key=lambda x: x[3], reverse=True)
 
-        return sorted_results[:3]
+        return sorted_results[:10]
     except sqlite3.Error:
         return []
 
     finally:
         conn.close()
 
-def get_books_by_genre(message):
-    genre = message.text
+def get_books_by_genre(genre):
     books = find_books_by_genre(genre)
     if not books:
-        bot.send_message(message.chat.id, 'Ничего не найдено. Проверьте название жанра и попробуйте еще раз.')
+        response = 'Ничего не найдено. Проверьте название жанра и попробуйте еще раз.'
     else:
         response = "Вот, что я нашел:\n\n"
         for book in books:
-            title, authors, description, published_year, average_rating = book
-            response += f" {title} \n Автор: {authors} \n Год выпуска книги: {published_year} \n Описание книги: {description}\n Рейтинг: {average_rating}\n\n"
+            title, authors, published_year, average_rating = book
+            response += f" {title} \n Автор: {authors} \n Год выпуска книги: {published_year} \n Рейтинг: {average_rating}\n\n"
+
+    return response
 
 
 @bot.message_handler(commands=['start'])
@@ -212,27 +215,40 @@ def get_message(message):
             biography = types.KeyboardButton('Биография')
             poetry = types.KeyboardButton('Поэзия')
             political = types.KeyboardButton('Политическая литература')
+            back = types.KeyboardButton('Назад')
 
 
-            markup.add(novel, fiction, fantasy, horror, biography, poetry, political)
+            markup.add(novel, fiction, fantasy, horror, biography, poetry, political, back)
             bot.send_message(message.chat.id, 'Какой жанр у искомой книги?'.format(message.from_user), reply_markup=markup)
 
 
         elif message.text == 'Беллетристика':
-            genre = 'Fiction'
-            response = get_books_by_genre(genre)
+            response = get_books_by_genre('Fiction')
+            bot.send_message(message.chat.id, response)
 
-            # books = find_books_by_genre(genre)
-            # if not books:
-            #     bot.send_message(message.chat.id, 'Ничего не найдено. Проверьте название жанра и попробуйте еще раз.')
-            # else:
-            #     response = "Вот, что я нашел:\n\n"
-            #     for book in books:
-            #         title, authors, description, published_year, average_rating = book
-            #         response += f" {title} \n Автор: {authors} \n Год выпуска книги: {published_year} \n Описание книги: {description}\n Рейтинг: {average_rating}\n\n"
-            #
-            #     bot.send_message(message.chat.id, response)
+        elif message.text == 'Роман':
+            response = get_books_by_genre('A Novel')
+            bot.send_message(message.chat.id, response)
 
+        elif message.text == 'Биография':
+            response = get_books_by_genre('Biography & Autobiography')
+            bot.send_message(message.chat.id, response)
+
+        elif message.text == 'Фантастика/фентези':
+            response = get_books_by_genre('Fantasy')
+            bot.send_message(message.chat.id, response)
+
+        elif message.text == 'Ужасы':
+            response = get_books_by_genre('Horror')
+            bot.send_message(message.chat.id, response)
+
+        elif message.text == 'Поэзия':
+            response = get_books_by_genre('Poetry')
+            bot.send_message(message.chat.id, response)
+
+        elif message.text == 'Политическая литература':
+            response = get_books_by_genre('Political Science')
+            bot.send_message(message.chat.id, response)
 
 
         elif user_states.get(message.chat.id) == 'waiting_for_authors_name':
