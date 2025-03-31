@@ -16,19 +16,274 @@ TOKEN = '7746010028:AAFIIkCfTsUD13vnWLwVEb9dbpwbOa5uxOM'
 
 user_states = {}
 
+special_names_directors = {
+    'Стивен': 'Steven',
+    'Кристофер': 'Christopher',
+    'Стэнли': 'Stanley',
+    'Кубрик': 'Kubrick',
+    'Альфред': 'Alfred',
+    'Хичкок': 'Hitchcock',
+    'Акира': 'Akira',
+    'Куросава': 'Kurosawa',
+    'Федерико': 'Federico',
+    'Феллини': 'Fellini',
+    'Мартин': 'Martin',
+    'Скорсезе': 'Scorsese',
+    'Чарли': 'Charles',
+    'Чаплин': 'Chaplin',
+    'Спилберг': 'Spielberg',
+    'Андрей': 'Andrei',
+    'Тарковский': 'Tarkovsky',
+    'Дэвид': 'David',
+    'Линч': 'Lynch',
+    'Сергей': 'Sergei',
+    'Ейзенштейн': 'Eisenstein',
+    'Вуди': 'Woody',
+    'Аллен': 'Allen',
+    'Роман': 'Roman',
+    'Полански': 'Polanski',
+    'Квентин': 'Quentin',
+    'Тарантино': 'Tarantino',
+    'Финчер': 'Fincher',
+    'Нолан': 'Nolan',
+    'Спайк': 'Spike',
+    'Ли': 'Lee',
+    'Дуглас': 'Douglas',
+    'Сирк': 'Sirk',
+    'Оливер': 'Oliver',
+    'Ридли': 'Ridley',
+    'Скотт': 'Scott',
+    'Милош': 'Milos',
+    'Форман': 'Forman',
+    'Хаяо': 'Hayao',
+    'Миядзаки': 'Miyazaki',
+    'Уэс': 'Wes',
+    'Андерсон': 'Anderson',
+    'Даррен': 'Darren',
+    'Аронофски': 'Aronofsky',
+    'Лукас': 'Lucas',
+    'Джордж': 'George',
+    'Клуни': 'Clooney',
+    'Джеймс': 'James',
+    'Кэмерон': 'Cameron',
+    'Кроненберг': 'Cronenberg',
+    'Вим': 'Wim',
+    'Вендерс': 'Wenders',
+    'Стоун': 'Stone',
+    'Джоэл': 'Joel',
+    'Коэн': 'Coen',
+    'Джон': 'John',
+    'Кассаветис': 'Cassavetes',
+    'Ричард': 'Richard',
+    'Бёртон': 'Burton',
+    'Марлон': 'Marlon',
+    'Брандо': 'Brando',
+    'Кирк': 'Kirk',
+    'Чарлтон': 'Charlton',
+    'Хестон': 'Heston',
+    'Петер': 'Peter',
+    'Лорре': 'Lorre',
+    'Пол': 'Paul',
+    'Ньюман': 'Newman',
+    'Энтони': 'Anthony',
+    'Куинн': 'Quinn',
+    'Стюарт': 'Stewart',
+    'Памела': 'Pamela',
+    'Дженнифер': 'Jennifer',
+    'Энистон': 'Aniston',
+    'Кевин': 'Kevin',
+    'Бейкон': 'Bacon',
+    'Люк': 'Luc',
+    'Бессон': 'Besson',
+    'Шон': 'Sean',
+    'Коннери': 'Connery',
+    'Крейвен': 'Craven',
+    'Рассел': 'Russell',
+    'Кроу': 'Crowe',
+    'Том': 'Tom',
+    'Круз': 'Cruise',
+    'Джейми': 'Jamie',
+    'Кёртис': 'Curtis',
+    'Роберт': 'Robert',
+    'Де': 'De',
+    'Ниро': 'Niro',
+    'Джони': 'Johnny',
+    'Депп': 'Depp',
+    'Майкл': 'Michael',
+    'Клинт': 'Clint',
+    'Иствуд': 'Eastwood',
+    'Джоди': 'Jodie',
+    'Фостер': 'Foster',
+    'Мел': 'Mel',
+    'Гибсон': 'Gibson',
+    'Дастин': 'Dustin',
+    'Хоффман': 'Hoffman',
+    'Томми': 'Tommy',
+    'Джонс': 'Jones',
+    'Джуд': 'Jude',
+    'Лоу': 'Law',
+    'Мэтью': 'Matthew',
+    'МакКонахи': 'McConaughey',
+    'Гэри': 'Gary',
+    'Олдман': 'Oldman',
+    'Ву': 'Woo',
+}
+
+actors_special_names = {
+    'Одри': 'Audrey',
+    'Хепбёрн': 'Hepburn',
+    'Сэмюэл': 'Samuel',
+    'Л. Джексон': 'L. Jackson',
+    'Аль': 'Al',
+    'Пачино': 'Pacino',
+    'Морган': 'Morgan',
+    'Фриман': 'Freeman',
+    'Клинт': 'Clint',
+    'Иствуд': 'Eastwood',
+    'Сильвестр': 'Sylvester',
+    'Сталлоне': 'Stallone',
+    'Вигго': 'Viggo',
+    'Мортенсен': 'Mortensen',
+    'Том': 'Tom',
+    'Харди': 'Hardy',
+    'Джейсон': 'Jason',
+    'Стейтем': 'Statham',
+    'Мэтью': 'Matthew',
+    'МакКонахи': 'McConaughey',
+    'Леонардо': 'Leonardo',
+    'ДиКаприо': 'DiCaprio',
+    'Джефф': 'Jeff',
+    'Бриджес': 'Bridges',
+    'Джим': 'Jim',
+    'Керри': 'Carrey',
+    'Иен': 'Ian',
+    'Маккеллен': 'McKellen',
+    'Джон': 'John',
+    'Малкович': 'Malkovich',
+    'Киану': 'Keanu',
+    'Ривз': 'Reeves',
+    'Дензел': 'Denzel',
+    'Вашингтон': 'Washington',
+    'Кевин': 'Kevin',
+    'Костнер': 'Costner',
+    'Шон': 'Sean',
+    'Пенн': 'Penn',
+    'Коннери': 'Connery',
+    'Брэд': 'Brad',
+    'Питт': 'Pitt',
+    'Мэтт': 'Matt',
+    'Дэймон': 'Damon',
+    'Роберт': 'Robert',
+    'Де Ниро': 'De Niro',
+    'Уиллем': 'Willem',
+    'Дефо': 'Dafoe',
+    'Киллиан': 'Cillian',
+    'Мёрфи': 'Murphy',
+    'Рами': 'Rami',
+    'Малек': 'Malek',
+    'Брюс': 'Bruce',
+    'Уиллис': 'Willis',
+    'Арнольд': 'Arnold',
+    'Шварценеггер': 'Schwarzenegger',
+    'Рэй': 'Ray',
+    'Лиотта': 'Liotta',
+    'Бэйкон': 'Bacon',
+    'Райан': 'Ryan',
+    'Рейнольдс': 'Reynolds',
+    'Гослинг': 'Gosling',
+    'Вин': 'Vin',
+    'Дизель': 'Diesel',
+    'Гэри': 'Gary',
+    'Олдман': 'Oldman',
+    'Кристиан': 'Christian',
+    'Бейл': 'Bale',
+    'Тоби': 'Tobey',
+    'Магуайр': 'Maguire',
+    'Хэнкс': 'Hanks',
+    'Николас': 'Nicolas',
+    'Кейдж': 'Cage',
+    'Круз': 'Cruise',
+    'Траволта': 'Travolta',
+    'Курт': 'Kurt',
+    'Рассел': 'Russell',
+    'Марк': 'Mark',
+    'Уолберг': 'Wahlberg',
+    'Кроу': 'Crowe',
+    'Дуэйн': 'Dwayne',
+    'Джонсон': 'Johnson',
+    'Идрис': 'Idris',
+    'Эльба': 'Elba',
+    'Хоакин': 'Joaquin',
+    'Феникс': 'Phoenix',
+    'Мэл': 'Mel',
+    'Гибсон': 'Gibson',
+    'Эдвард': 'Edward',
+    'Нортон': 'Norton',
+    'Уилл': 'Will',
+    'Смит': 'Smith',
+    'Джеки': 'Jackie',
+    'Чан': 'Chan',
+    'Кристоф': 'Christoph',
+    'Вальц': 'Waltz',
+    'Вивьен': 'Vivien',
+    'Ли': 'Leigh',
+    'Мэрил': 'Meryl',
+    'Стрип': 'Streep',
+    'Мэрлин': 'Marilyn',
+    'Монро': 'Monroe',
+    'Джоди': 'Jodie',
+    'Фостер': 'Foster',
+    'Николь': 'Nicole',
+    'Кидман': 'Kidman',
+    'Кейт': 'Cate',
+    'Бланшетт': 'Blanchett',
+    'Шарлиз': 'Charlize',
+    'Терон': 'Theron',
+    'Софи': 'Sophia',
+    'Лорен': 'Loren',
+    'Сигурни': 'Sigourney',
+    'Уивер': 'Weaver',
+    'Сандра': 'Sandra',
+    'Буллок': 'Bullock',
+    'Хелена': 'Helena',
+    'Бонэм': 'Bonham',
+    'Картер': 'Carter',
+    'Марлен': 'Marlene',
+    'Дитрих': 'Dietrich',
+    'Ума': 'Uma',
+    'Турман': 'Thurman',
+    'Анджелина': 'Angelina',
+    'Джоли': 'Jolie',
+
+}
+
 def translation(title):
     translator = Translator()
     str = "'" + title + "'"
     title_ru = translator.translate(str, dest='ru').text
     return title_ru
 
+def translate_person(name):
+    parts = name.split()
+    tr_parts = []
+    for part in parts:
+        if part in special_names_directors:
+            tr_parts.append(special_names_directors[part])
+        elif part in actors_special_names:
+            tr_parts.append(actors_special_names[part])
+        else:
+            tr_parts.append(part)
+    return " ".join(tr_parts)
+
+
 def find_movies_by_person_other(person_name):
+    person_name_eng = translate_person(person_name)
     conn = sqlite3.connect('my_database.db')
     cursor = conn.cursor()
     try:
         cursor.execute("""
         SELECT nconst FROM people WHERE primaryName = ?
-        """, (person_name,))
+        """, (person_name_eng,))
         person_id = cursor.fetchone()
         if not person_id:
             return []
@@ -52,7 +307,7 @@ def find_movies_by_person_other(person_name):
 
             results1.append((title, rating, category))
 
-#        sorted_results = sorted(results1, key=lambda x: x[2], reverse=True)
+        #        sorted_results = sorted(results1, key=lambda x: x[2], reverse=True)
 
         return results1[:15]
 
@@ -61,7 +316,6 @@ def find_movies_by_person_other(person_name):
 
     finally:
         conn.close()
-
 
 
 def find_books_by_authors_name(person_name):
@@ -108,6 +362,7 @@ def find_books_by_genre(genre):
 
     finally:
         conn.close()
+
 
 def get_books_by_genre(genre):
     books = find_books_by_genre(genre)
@@ -192,7 +447,6 @@ def get_message(message):
             poetry = types.KeyboardButton('Поэзия')
             political = types.KeyboardButton('Политическая литература')
             back = types.KeyboardButton('Назад')
-
 
             markup.add(novel, fiction, fantasy, horror, biography, poetry, political, back)
             bot.send_message(message.chat.id, 'Какой жанр у искомой книги?'.format(message.from_user), reply_markup=markup)
