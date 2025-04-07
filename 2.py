@@ -1,9 +1,8 @@
 import telebot
-import requests
 from telebot import types
 import sqlite3
 from googletrans import Translator
-from transliterate import translit
+
 
 bot = telebot.TeleBot('7746010028:AAFIIkCfTsUD13vnWLwVEb9dbpwbOa5uxOM')
 myHeaders = {
@@ -256,6 +255,104 @@ actors_special_names = {
     'Джоли': 'Jolie',
 
 }
+special_names_authors = {
+    'Стивен': 'Stephen',
+    'Кинг': 'King',
+    'Агата': 'Agatha',
+    'Кристи': 'Christie',
+    'Рэй': 'Raymond',
+    'Брэдбери': 'Bradbury',
+    'Эрих': 'Erich',
+    'Мария': 'Maria',
+    'Ремарк': 'Remark',
+    'Джоан': 'Joanne',
+    'Роулинг': 'Rowling',
+    'Дэниел': 'Daniel',
+    'Киз': 'Keyes',
+    'Джордж': 'George',
+    'Оруэлл': 'Orwell',
+    'Оскар': 'Oscar',
+    'Уальд': 'Wilde',
+    'Антуан': 'Antoine',
+    'де': 'de',
+    'Сент-Экзюпери': 'Saint-Exupery',
+    'Джек': 'Jack',
+    'Лондон': 'London',
+    'Джейн': 'Jane ',
+    'Остин': 'Austen',
+    'Джером': 'Jerome',
+    'Сэлинджер': 'Salinger',
+    'Фрэнсис': 'Francis',
+    'Скотт': 'Scott',
+    'Фицджеральд': 'Fitzgerald',
+    'Шарлотта': 'Charlotte',
+    'Бронте': 'Bronte',
+    'Нил': 'Neil',
+    'Гейман': 'Gaiman',
+    'Харуки': 'Haruki',
+    'Мураками': 'Murakami',
+    'Чак': 'Chuck',
+    'Паланик': 'Palahnuik',
+    'Артур': 'Arthur',
+    'Конан': 'Conan',
+    'Дойл': 'Doyle',
+    'Харпер': 'Harper',
+    'Ли': 'Lee',
+    'Пауло': 'Paulo',
+    'Коэльо': 'Coelho',
+    'Джон': 'John',
+    'Толкиен': 'Tolkien',
+    'Александр': 'Alexandre',
+    'Дюма': 'Dumas',
+    'Габриель': 'Gabriel',
+    'Маркес': 'Marques',
+    'Эрнест': 'Ernest',
+    'Хемингуэй': 'Hemingway',
+    'Олдос': 'Aldous',
+    'Хаксли': 'Huxley',
+    'Эмили': 'Emily',
+    'Уиллиам': 'William',
+    'Голдинг': 'Golding',
+    'Фаулз': 'Fowles',
+    'Маргарет': 'Margaret',
+    'Митчелл': 'Mitchell',
+    'Шекспир': 'Shakespeare',
+    'Дэн': 'Dan',
+    'Браун': 'Brown',
+    'Сомерсет': 'Somerset',
+    'Моэм': 'Maugham',
+    'Виктор': 'Victor',
+    'Гюго': 'Hugo',
+    'Маркус': 'Markus',
+    'Зусак': 'Zusak',
+    'Франц': 'Franz',
+    'Кафка': 'Kafka',
+    'Жюль': 'Jules',
+    'Верн': 'Verne',
+    'Кен': 'Ken',
+    'Кизи': 'Kesey',
+    'Достоевский': 'Dostoevsky',
+    'Фёдор': 'Fyodor',
+    'Лев': 'Leo',
+    'Толстой': 'Tolstoy',
+    'Тургенев': 'Turgenev',
+    'Иван': 'Ivan',
+    'Михаил': 'Mikhail',
+    'Булгаков': 'Bulgakov',
+    'Пушкин': 'Pushkin',
+    'Николай': 'Nikolai',
+    'Гоголь': 'Gogol',
+    'Стругацкий': 'Strugatsky',
+    'Аркадий': 'Arkady',
+    'Борис': 'Boris',
+    'Лермонтов': 'Lermontov',
+    'Чехов': 'Chekhov',
+    'Антон': 'Anton',
+    'Набоков': 'Nabokov',
+    'Владимир': 'Vladimir',
+    'Куприн': 'Kuprin',
+}
+
 
 def translation(title):
     translator = Translator()
@@ -263,18 +360,27 @@ def translation(title):
     title_ru = translator.translate(str, dest='ru').text
     return title_ru
 
-def translate_person(name):
-    parts = name.split()
+def translate_author(name):
+    parts = name.split
     tr_parts = []
     for part in parts:
-        if part in special_names_directors:
-            tr_parts.append(special_names_directors[part])
-        elif part in actors_special_names:
-            tr_parts.append(actors_special_names[part])
+        if part in special_names_authors:
+            tr_parts.append(special_names_authors[part])
         else:
-            tr_parts.append(part)
+            bot.send_message(name.chat.id,'Пожалуйста, проверьте написание имени или напишите запрос на английском')
     return " ".join(tr_parts)
 
+def translate_person(name):
+    parts = name.split
+    tr_parts = []
+    for part in parts:
+        if part in actors_special_names:
+            tr_parts.append(actors_special_names[part])
+        elif part in special_names_directors:
+            tr_parts.append(special_names_directors[part])
+        else:
+            bot.send_message(name.chat.id,'Пожалуйста, проверьте написание имени или напишите запрос на английском')
+    return " ".join(tr_parts)
 
 def find_movies_by_person_other(person_name):
     person_name_eng = translate_person(person_name)
@@ -307,8 +413,6 @@ def find_movies_by_person_other(person_name):
 
             results1.append((title, rating, category))
 
-        #        sorted_results = sorted(results1, key=lambda x: x[2], reverse=True)
-
         return results1[:15]
 
     except sqlite3.Error:
@@ -318,7 +422,8 @@ def find_movies_by_person_other(person_name):
         conn.close()
 
 
-def find_books_by_authors_name(person_name):
+def find_books_by_authors_name(person_name_rus):
+    person_name = translate_author(person_name_rus)
     conn = sqlite3.connect('my_database_books.db')
     cursor = conn.cursor()
     try:
