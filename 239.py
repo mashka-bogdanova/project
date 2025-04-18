@@ -387,6 +387,7 @@ def translate_person(name):
 
 
 
+
 def find_movies_by_person(person_name, role):
     person_name_eng = translate_person(person_name)
     if not person_name_eng:
@@ -411,13 +412,18 @@ def find_movies_by_person(person_name, role):
 
         results = []
         for title, year, rating, genres, runtime in cursor.fetchall():
-            results.append((
-                title or "Нет названия",
-                year or "неизвестен",
-                float(rating) if rating else 0.0,
-                genres or "не указаны",
-                runtime or "?"
-            ))
+            if not title:
+                title = "Нет названия"
+            if not year:
+                year = "Год неизвестен"
+            if not rating:
+                rating = 0.0
+            if not genres:
+                genres = "Жанры не указаны"
+            if not runtime:
+                runtime = "?"
+
+            results.append((title, year, rating, genres, runtime))
         return results
     except sqlite3.Error as e:
         print("DB Error:", e)
@@ -456,13 +462,18 @@ def find_movies(filters):
 
         results = []
         for title, year, rating, genres, runtime in cursor.fetchall():
-            results.append((
-                title or "Нет названия",
-                year or "неизвестен",
-                float(rating) if rating else 0.0,
-                genres or "не указаны",
-                runtime or "?"
-            ))
+            if not title:
+                title = "Нет названия"
+            if not year:
+                year = "Год неизвестен"
+            if not rating:
+                rating = 0.0
+            if not genres:
+                genres = "Жанры не указаны"
+            if not runtime:
+                runtime = "?"
+
+            results.append((title, year,rating, genres, runtime))
         return results
     except sqlite3.Error as e:
         print("DB Error:", e)
@@ -489,12 +500,17 @@ def find_books_by_author(author_name):
 
         results = []
         for title, authors, year, rating in cursor.fetchall():
-            results.append((
-                translation(title) if title else "Нет названия",
-                authors or "неизвестен",
-                year or "неизвестен",
-                float(rating) if rating else 0.0
-            ))
+            if not title:
+                title = "Нет названия"
+            if not authors:
+                authors = "неизвестен"
+            if not year:
+                year = "неизвестен"
+            if not rating:
+                rating = 0.0
+
+            results.append((translation(title), authors, year, float(rating)))
+
         return results
     except sqlite3.Error as e:
         print("DB Error:", e)
@@ -517,18 +533,24 @@ def find_books_by_genre(genre):
 
         results = []
         for title, authors, year, rating in cursor.fetchall():
-            results.append((
-                translation(title) if title else "Нет названия",
-                authors or "неизвестен",
-                year or "неизвестен",
-                float(rating) if rating else 0.0
-            ))
+            if not title:
+                title = "Нет названия"
+            if not authors:
+                authors = "неизвестен"
+            if not year:
+                year = "неизвестен"
+            if not rating:
+                rating = 0.0
+
+            results.append((translation(title),authors,year,float(rating)))
+
         return results
     except sqlite3.Error as e:
         print("DB Error:", e)
         return []
     finally:
         conn.close()
+
 
 
 @bot.message_handler(commands=['start'])
