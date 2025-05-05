@@ -41,7 +41,7 @@ def translate_person(name):
 
 
 def find_movies_by_filters(filters):
-    conn = sqlite3.connect('my_database.db')
+    conn = sqlite3.connect('D:/maria/db/my_database1.db')
     try:
         cursor = conn.cursor()
 
@@ -50,12 +50,12 @@ def find_movies_by_filters(filters):
                 m.tconst,  
                 m.primaryTitle, 
                 m.startYear, 
-                COALESCE(r.averageRating, 0) as rating,
+                r.averageRating,
                 m.genres,
                 m.runtimeMinutes
             FROM movies1 m
             LEFT JOIN ratings r ON m.tconst = r.tconst
-            LEFT JOIN principals1 p ON m.tconst = p.tconst
+            LEFT JOIN principals p ON m.tconst = p.tconst
             LEFT JOIN people pe ON p.nconst = pe.nconst
             WHERE 1=1
         """
@@ -63,12 +63,14 @@ def find_movies_by_filters(filters):
         params = []
 
         if 'director' in filters:
+            dir_eng = translate_person(filters['director'])
             query += " AND p.nconst IN (SELECT nconst FROM people WHERE primaryName LIKE ?) AND p.category = 'director'"
-            params.append(f"%{filters['director']}%")
+            params.append(f"%{dir_eng}%")
 
         if 'actor' in filters:
+            act_eng = translate_person(filters['actor'])
             query += " AND p.nconst IN (SELECT nconst FROM people WHERE primaryName LIKE ?) AND p.category = 'actor'"
-            params.append(f"%{filters['actor']}%")
+            params.append(f"%{act_eng}%")
 
         if 'genre' in filters:
             query += " AND m.genres LIKE ?"
@@ -113,21 +115,22 @@ def find_movies_by_filters(filters):
 
 
 def find_books_by_filters(filters):
-    conn = sqlite3.connect('my_database_books.db')
+    conn = sqlite3.connect('D:/maria/db/my_database_books.db')
     try:
         cursor = conn.cursor()
 
         query = """
             SELECT title, authors, published_year, average_rating, description
-            FROM books
+            FROM people
             WHERE 1=1
         """
 
         params = []
 
         if 'author' in filters:
+            auth_eng = translate_author(filters['author'])
             query += " AND authors LIKE ?"
-            params.append(f"%{filters['author']}%")
+            params.append(f"%{auth_eng}%")
 
         if 'genre' in filters:
             query += " AND categories LIKE ?"
@@ -158,7 +161,7 @@ def find_books_by_filters(filters):
     finally:
         conn.close()
 
-
+user_data = {}
 
 USER_STATES = {
     'SELECTING_TYPE': 0,
@@ -169,12 +172,14 @@ USER_STATES = {
     'SEARCHING': 5
 }
 
-user_data = {
-    'state': USER_STATES['SELECTING_TYPE'],
-    'search_type': None,
-    'filters': {},
-    'current_filter': None
-}
+def reset_user_state(chat_id):
+    user_data[chat_id] = {
+        'state': USER_STATES['SELECTING_TYPE'],
+        'search_type': None,
+        'filters': {},
+        'current_filter': None
+    }
+
 
 FILM_FILTERS = {
     'Режиссёр': 'director',
@@ -198,15 +203,6 @@ BOOK_FILTERS = {
 def start(message):
     reset_user_state(message.chat.id)
     show_main_menu(message.chat.id)
-
-
-def reset_user_state(chat_id):
-    user_data[chat_id] = {
-        'state': USER_STATES['SELECTING_TYPE'],
-        'search_type': None,
-        'filters': {},
-        'current_filter': None
-    }
 
 
 def show_main_menu(chat_id):
@@ -304,9 +300,62 @@ def handle_add_more_choice(message):
             show_book_filters(chat_id)
     elif message.text == 'Нет':
         user['state'] = USER_STATES['SEARCHING']
+        #massive(chat_id)
         perform_search(chat_id)
     else:
         bot.send_message(chat_id, 'Пожалуйста, выберите "Да" или "Нет"')
+
+
+def massive(chat_id):
+    result = user_data[chat_id]['search_type']
+    filters = user_data[chat_id]['filters']
+    query = """
+                SELECT DISTINCT
+                    m.tconst,  
+                    m.primaryTitle, 
+                    m.startYear, 
+                    COALESCE(r.averageRating, 0) as rating,
+                    m.genres,
+                    m.runtimeMinutes
+                FROM movies1 m
+                LEFT JOIN ratings r ON m.tconst = r.tconst
+                LEFT JOIN principals1 p ON m.tconst = p.tconst
+                LEFT JOIN people pe ON p.nconst = pe.nconst
+                WHERE 1=1
+            """
+
+    params = []
+
+    if 'director' in filters:
+        query += " AND p.nconst IN (SELECT nconst FROM people WHERE primaryName LIKE ?) AND p.category = 'director'"
+        params.append(f"%{filters['director']}%")
+
+    if 'actor' in filters:
+        query += " AND p.nconst IN (SELECT nconst FROM people WHERE primaryName LIKE ?) AND p.category = 'actor'"
+        params.append(f"%{filters['actor']}%")
+
+    if 'genre' in filters:
+        query += " AND m.genres LIKE ?"
+        params.append({filters['genre']})
+
+    if 'year' in filters:
+        query += " AND m.startYear = ?"
+        params.append(filters['year'])
+
+    if 'rating' in filters:
+        query += " AND r.averageRating >= ?"
+        params.append(filters['rating'])
+
+    if 'runtime' in filters:
+        query += " AND m.runtimeMinutes >= ?"
+        params.append(filters['runtime'])
+
+    query += " ORDER BY r.averageRating DESC LIMIT 5"
+    bot.send_message(chat_id, query)
+    for par in params:
+        bot.send_message(chat_id, str(par))
+
+
 
 
 @bot.message_handler(func=lambda message: message.text == 'Найти!')
@@ -324,10 +373,14 @@ def handle_back(message):
     start(message.chat.id)
 
 
-
 def perform_search(chat_id):
     try:
+        if chat_id not in user_data:
+            bot.send_message(chat_id, "Что-то пошло не так. Пожалуйста, начните заново с /start")
+            return
+
         user = user_data[chat_id]
+        results = []
 
         if user['search_type'] == 'film':
             results = find_movies_by_filters(user['filters'])
@@ -364,4 +417,9 @@ def perform_search(chat_id):
     finally:
         reset_user_state(chat_id)
         show_main_menu(chat_id)
+
+
+
 bot.polling(none_stop=True)
+
+
